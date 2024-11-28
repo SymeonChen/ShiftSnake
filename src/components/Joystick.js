@@ -24,31 +24,31 @@ const Joystick = ({ onDirectionChange, gameState }) => {
     const distance = Math.min(Math.hypot(deltaX, deltaY), 50);
     const angle = Math.atan2(deltaY, deltaX);
     
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
+    const newX = Math.cos(angle) * distance;
+    const newY = Math.sin(angle) * distance;
     
-    setPosition(prev => ({
-      x: x * 0.8 + prev.x * 0.2,
-      y: y * 0.8 + prev.y * 0.2
-    }));
-
-    if (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15) {
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      
-      let newDirection;
-      if (absX > absY) {
-        newDirection = deltaX > 0 ? 'RIGHT' : 'LEFT';
+    setPosition({ x: newX, y: newY });
+    
+    const angleInDegrees = (angle * 180) / Math.PI;
+    let newDirection;
+    
+    if (distance > 10) {
+      if (angleInDegrees > -45 && angleInDegrees <= 45) {
+        newDirection = "RIGHT";
+      } else if (angleInDegrees > 45 && angleInDegrees <= 135) {
+        newDirection = "DOWN";
+      } else if (angleInDegrees > 135 || angleInDegrees <= -135) {
+        newDirection = "LEFT";
       } else {
-        newDirection = deltaY > 0 ? 'DOWN' : 'UP';
+        newDirection = "UP";
       }
-
+      
       if (newDirection !== lastDirection.current) {
         lastDirection.current = newDirection;
         onDirectionChange(newDirection);
       }
     }
-  }, [isDragging, basePosition, onDirectionChange, gameState]);
+  }, [isDragging, gameState, basePosition, onDirectionChange]);
 
   const handleEnd = useCallback(() => {
     setIsDragging(false);

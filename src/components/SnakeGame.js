@@ -39,6 +39,7 @@ const GameIcons = {
 function SnakeGame() {
   // 添加 gameRef
   const gameRef = useRef(null);
+  const lastRotation = useRef(0);
   
   // 1. 首先声明所有状态
   const [rows, setRows] = useState(10);
@@ -75,11 +76,7 @@ function SnakeGame() {
   const handleGameOver = (completed = false) => {
     setIsGameOver(true);
     setGameState("GAMEOVER");
-    
-    // 延迟显示弹窗
-    setTimeout(() => {
-      setShowModal(true);
-    }, 200);
+    setShowModal(true);
   };
 
   // 5. 修改重置游戏函数
@@ -234,7 +231,7 @@ function SnakeGame() {
           break;
       }
       
-      // 如果新的头部位置与第一个身体段重合，则忽略这次方向改变
+      // 如果新的头部位置与第一个身体段重合，忽略这次方向改变
       if (newHead.x === firstBody.x && newHead.y === firstBody.y) {
         return;
       }
@@ -327,21 +324,30 @@ function SnakeGame() {
 
   const getSegmentRotation = (index) => {
     if (index === 0) {
+      const prevRotation = lastRotation.current || 0;
+      let newRotation;
+      
       switch (direction) {
-        case "UP": return 0;
-        case "RIGHT": return 90;
-        case "DOWN": return 180;
-        case "LEFT": return 270;
-        default: return 0;
+        case "UP": newRotation = 0; break;
+        case "RIGHT": newRotation = 90; break;
+        case "DOWN": newRotation = 180; break;
+        case "LEFT": newRotation = 270; break;
+        default: newRotation = prevRotation;
       }
+      
+      // 计算最短旋转路径
+      const diff = ((newRotation - prevRotation + 540) % 360) - 180;
+      lastRotation.current = prevRotation + diff;
+      
+      return lastRotation.current;
     }
     return 0;
   };
 
   return (
-    <div ref={gameRef} className="flex flex-col items-center min-h-screen relative pt-20">
+    <div ref={gameRef} className="flex flex-col items-center h-screen px-4">
       <LevelInfo />
-      <div className="w-full max-w-md bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl p-6 space-y-6">
+      <div className="w-full max-w-md bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl p-4 space-y-4 mt-20">
         {/* 游戏区域 */}
         <div 
           className="grid gap-[1px] mx-auto rounded-2xl bg-gradient-to-br from-purple-100/50 to-pink-100/50 dark:from-purple-900/30 dark:to-pink-900/30 p-4 backdrop-blur-sm"
@@ -355,18 +361,13 @@ function SnakeGame() {
         </div>
 
         {/* 控制区域 */}
-        <div className="flex justify-center items-center gap-8 mt-4">
-          <Joystick 
-            onDirectionChange={handleDirectionChange} 
-            gameState={gameState}
-          />
-          <button 
-            onClick={resetGame} 
-            className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center text-2xl"
-            disabled={gameState === "GAMEOVER" && !showModal}
-          >
-            🔄
-          </button>
+        <div className="flex justify-center items-center mt-4">
+          <div className="flex-1 flex justify-center">
+            <Joystick 
+              onDirectionChange={handleDirectionChange} 
+              gameState={gameState}
+            />
+          </div>
         </div>
       </div>
 
