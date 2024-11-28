@@ -8,8 +8,10 @@ const SnakeGame = dynamic(() => import("../components/SnakeGame"), { ssr: false 
 
 export default function Home() {
   return (
-    <div>
-      <h1>❤️💩❤️</h1>
+    <div className="min-h-screen bg-gradient-to-b from-purple-500 to-pink-500 p-4">
+      <h1 className="text-4xl font-bold text-center text-white mb-8 animate-bounce">
+        🎮 贪吃蛇大冒险 
+      </h1>
       <SnakeGame />
     </div>
   );
