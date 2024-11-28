@@ -3,15 +3,16 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import html2canvas from 'html2canvas'; // 需要先安装：npm install html2canvas
 import Joystick from './Joystick';
+import { Head, Body, Food, Crown } from './icons';
 
 const initialGridSize = 10;  // 默认网格大小
-const initialSpeed = 100;  // 默认速度，单位毫秒（较小值即较快）
+const initialSpeed = 300;  // 默认速度为 300ms
 
 // 在文件开头添加关卡配置
 const LEVELS = Array.from({ length: 10 }, (_, i) => ({
   level: i + 1,
-  target: Math.floor(10 + (i * 10)),  // 10, 20, 30, ..., 100
-  speed: Math.max(50, 200 - (i * 15))  // 200, 185, 170, ..., 65
+  target: Math.floor(10 + (i * 10)),  // 目标分数：10, 20, 30, ..., 100
+  speed: Math.max(175, 300 - (i * 14))  // 速度：300, 286, 272, ..., 175
 }));
 
 // 生成食物的函数
@@ -29,42 +30,10 @@ const generateFood = (snake, gridSize) => {
 
 // 替换 GAME_IMAGES 常量为 SVG 组件
 const GameIcons = {
-  HEAD: () => (
-    <svg viewBox="0 0 24 24" className="w-full h-full">
-      <circle cx="12" cy="12" r="10" fill="#FFD93D"/>
-      <circle cx="8" cy="10" r="2" fill="#000"/>
-      <circle cx="16" cy="10" r="2" fill="#000"/>
-      <path d="M8 16c2.5 1.5 5.5 1.5 8 0" stroke="#000" strokeWidth="2" fill="none"/>
-    </svg>
-  ),
-  BODY: () => (
-    <svg viewBox="0 0 24 24" className="w-full h-full">
-      <path d="M12 4c4.4 0 8 3.6 8 8s-3.6 8-8 8-8-3.6-8-8 3.6-8 8-8z" fill="#8B4513"/>
-      <path d="M8 8c2 1 4 1 6 0" fill="#A0522D"/>
-      <path d="M10 12c2 1 4 1 6 0" fill="#A0522D"/>
-      <path d="M8 16c2 1 4 1 6 0" fill="#A0522D"/>
-      <circle cx="9" cy="7" r="1" fill="#D2691E"/>
-      <circle cx="15" cy="9" r="1" fill="#D2691E"/>
-      <circle cx="14" cy="15" r="1" fill="#D2691E"/>
-    </svg>
-  ),
-  FOOD: () => (
-    <svg viewBox="0 0 24 24" className="w-full h-full">
-      <path d="M4 12h16v8H4z" fill="#FFB6C1"/>
-      <path d="M6 12c0-2 2.7-4 6-4s6 2 6 4" fill="#FF69B4"/>
-      <path d="M4 12c2-1.5 4-1.5 6 0s4 1.5 6 0s4-1.5 6 0" fill="#FFF"/>
-      <circle cx="12" cy="7" r="2" fill="#FF0000"/>
-      <circle cx="8" cy="10" r="0.5" fill="#FFF"/>
-      <circle cx="16" cy="10" r="0.5" fill="#FFF"/>
-      <circle cx="12" cy="11" r="0.5" fill="#FFF"/>
-    </svg>
-  ),
-  CROWN: () => (
-    <svg viewBox="0 0 24 24" className="w-full h-full">
-      <path d="M3 14l4-8 4 4 4-4 4 8H3z" fill="#FFD700"/>
-      <path d="M5 16h14v2H5z" fill="#FFD700"/>
-    </svg>
-  )
+  HEAD: Head,
+  BODY: Body,
+  FOOD: Food,
+  CROWN: Crown
 };
 
 function SnakeGame() {
@@ -190,16 +159,33 @@ function SnakeGame() {
   const renderGrid = () => {
     const grid = Array(rows).fill().map(() => Array(cols).fill(''));
     
-    // 绘制蛇
     snake.forEach((segment, index) => {
       if (segment.x >= 0 && segment.x < cols && segment.y >= 0 && segment.y < rows) {
-        grid[segment.y][segment.x] = index === 0 ? <GameIcons.HEAD /> : <GameIcons.BODY />;
+        const prevSegment = index > 0 ? snake[index - 1] : null;
+        const moveX = prevSegment ? (prevSegment.x - segment.x) * 100 : 0;
+        const moveY = prevSegment ? (prevSegment.y - segment.y) * 100 : 0;
+        
+        grid[segment.y][segment.x] = (
+          <div 
+            className="w-full h-full snake-segment" 
+            style={{
+              transform: `rotate(${getSegmentRotation(index)}deg)`,
+              '--move-x': `${moveX}%`,
+              '--move-y': `${moveY}%`
+            }}
+          >
+            {index === 0 ? <GameIcons.HEAD /> : <GameIcons.BODY />}
+          </div>
+        );
       }
     });
   
-    // 绘制食物
     if (food.x >= 0 && food.x < cols && food.y >= 0 && food.y < rows) {
-      grid[food.y][food.x] = <GameIcons.FOOD />;
+      grid[food.y][food.x] = (
+        <div className="w-full h-full">
+          <GameIcons.FOOD />
+        </div>
+      );
     }
   
     return grid.map((row, y) =>
@@ -225,8 +211,37 @@ function SnakeGame() {
     if (gameState === "STOP") {
       setGameState("PLAYING");
     }
+    
+    // 如果蛇长度大于1，检查是否会撞到第一个身体段
+    if (snake.length > 1) {
+      const head = snake[0];
+      const firstBody = snake[1];
+      
+      // 计算新的头部位置
+      let newHead = { ...head };
+      switch (newDirection) {
+        case "UP":
+          newHead.y -= 1;
+          break;
+        case "DOWN":
+          newHead.y += 1;
+          break;
+        case "LEFT":
+          newHead.x -= 1;
+          break;
+        case "RIGHT":
+          newHead.x += 1;
+          break;
+      }
+      
+      // 如果新的头部位置与第一个身体段重合，则忽略这次方向改变
+      if (newHead.x === firstBody.x && newHead.y === firstBody.y) {
+        return;
+      }
+    }
+    
     setDirection(newDirection);
-  }, [gameState]);
+  }, [gameState, snake]);
 
   // 检查撞
   const checkCollision = (head) => {
@@ -309,6 +324,19 @@ function SnakeGame() {
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [handleDirectionChange]);
+
+  const getSegmentRotation = (index) => {
+    if (index === 0) {
+      switch (direction) {
+        case "UP": return 0;
+        case "RIGHT": return 90;
+        case "DOWN": return 180;
+        case "LEFT": return 270;
+        default: return 0;
+      }
+    }
+    return 0;
+  };
 
   return (
     <div ref={gameRef} className="flex flex-col items-center min-h-screen relative pt-20">

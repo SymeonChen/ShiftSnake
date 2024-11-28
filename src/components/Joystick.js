@@ -5,7 +5,6 @@ const Joystick = ({ onDirectionChange, gameState }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [basePosition, setBasePosition] = useState({ x: 0, y: 0 });
   const lastDirection = useRef(null);
-  const lastMoveTime = useRef(0);
 
   const handleStart = useCallback((e) => {
     if (gameState === "GAMEOVER") return;
@@ -17,10 +16,6 @@ const Joystick = ({ onDirectionChange, gameState }) => {
   const handleMove = useCallback((e) => {
     if (!isDragging || gameState === "GAMEOVER") return;
     e.preventDefault();
-    
-    const now = Date.now();
-    if (now - lastMoveTime.current < 50) return;
-    lastMoveTime.current = now;
     
     const touch = e.touches ? e.touches[0] : e;
     const deltaX = touch.clientX - basePosition.x;
