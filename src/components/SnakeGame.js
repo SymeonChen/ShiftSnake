@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import html2canvas from 'html2canvas'; // 需要先安装：npm install html2canvas
+import Joystick from './Joystick';
 
 const initialGridSize = 10;  // 默认网格大小
 const initialSpeed = 100;  // 默认速度，单位毫秒（较小值即较快）
@@ -104,7 +105,12 @@ function SnakeGame() {
   // 4. 修改游戏结束处理函数
   const handleGameOver = (completed = false) => {
     setIsGameOver(true);
-    setShowModal(true);
+    setGameState("GAMEOVER");
+    
+    // 延迟显示弹窗
+    setTimeout(() => {
+      setShowModal(true);
+    }, 200);
   };
 
   // 5. 修改重置游戏函数
@@ -320,42 +326,19 @@ function SnakeGame() {
           {renderGrid()}
         </div>
 
-        {/* 控制按钮 */}
-        <div className="grid grid-cols-3 gap-3 max-w-[280px] mx-auto">
-          <div></div>
-          <button 
-            onClick={() => handleDirectionChange("UP")} 
-            className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
-          >
-            ⬆️
-          </button>
-          <div></div>
-          <button 
-            onClick={() => handleDirectionChange("LEFT")} 
-            className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
-          >
-            ⬅️
-          </button>
+        {/* 控制区域 */}
+        <div className="flex justify-center items-center gap-8 mt-4">
+          <Joystick 
+            onDirectionChange={handleDirectionChange} 
+            gameState={gameState}
+          />
           <button 
             onClick={resetGame} 
-            className="p-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
+            className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center text-2xl"
+            disabled={gameState === "GAMEOVER" && !showModal}
           >
             🔄
           </button>
-          <button 
-            onClick={() => handleDirectionChange("RIGHT")} 
-            className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
-          >
-            ➡️
-          </button>
-          <div></div>
-          <button 
-            onClick={() => handleDirectionChange("DOWN")} 
-            className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
-          >
-            ⬇️
-          </button>
-          <div></div>
         </div>
       </div>
 
